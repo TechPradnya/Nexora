@@ -2,21 +2,97 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
+import path from 'node:path';
+
+const onchainRuntimePackage =
+  '@midnight-ntwrk/onchain-runtime-v3';
 
 export default defineConfig({
-  plugins: [react(), wasm(), topLevelAwait()],
+  cacheDir: './.vite',
+
+  plugins: [
+    react(),
+    wasm(),
+    topLevelAwait(),
+  ],
+
+  resolve: {
+    extensions: [
+      '.mjs',
+      '.js',
+      '.ts',
+      '.jsx',
+      '.tsx',
+      '.json',
+      '.wasm',
+    ],
+
+    mainFields: [
+      'browser',
+      'module',
+      'main',
+    ],
+
+    alias: {
+      '@midnight-ntwrk/onchain-runtime':
+        onchainRuntimePackage,
+    },
+
+    dedupe: [
+      '@midnight-ntwrk/compact-runtime',
+    ],
+  },
+
   build: {
     target: 'esnext',
-    commonjsOptions: { transformMixedEsModules: true, extensions: ['.js', '.cjs'] },
-    rollupOptions: { output: { manualChunks: { wasm: ['@midnight-ntwrk/onchain-runtime-v3'] } } }
+
+    minify: false,
+
+    commonjsOptions: {
+      transformMixedEsModules: true,
+      extensions: ['.js', '.cjs'],
+      ignoreDynamicRequires: true,
+    },
+
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          wasm: [onchainRuntimePackage],
+        },
+      },
+    },
   },
+
   optimizeDeps: {
-    esbuildOptions: { target: 'esnext', supported: { 'top-level-await': true }, define: { global: 'globalThis' } },
+    esbuildOptions: {
+      target: 'esnext',
+
+      supported: {
+        'top-level-await': true,
+      },
+
+      define: {
+        global: 'globalThis',
+      },
+    },
+
+    /*
+     * IMPORTANT:
+     * compact-runtime MUST be optimized.
+     *
+     * onchain-runtime-v3 is WASM and must NOT
+     * be optimized by Vite.
+     */
+    include: [
+      '@midnight-ntwrk/compact-runtime',
+    ],
+
     exclude: [
-      '@midnight-ntwrk/compact-runtime', '@midnight-ntwrk/onchain-runtime-v3',
-      '@midnight-ntwrk/midnight-js-contracts', '@midnight-ntwrk/midnight-js-http-client-proof-provider',
-      '@midnight-ntwrk/midnight-js-indexer-public-data-provider', '@midnight-ntwrk/midnight-js-level-private-state-provider',
-      '@midnight-ntwrk/midnight-js-network-id', '@midnight-ntwrk/midnight-js-utils'
-    ]
-  }
+      onchainRuntimePackage,
+
+      `${onchainRuntimePackage}/midnight_onchain_runtime_wasm_bg.wasm`,
+
+      `${onchainRuntimePackage}/midnight_onchain_runtime_wasm.js`,
+    ],
+  },
 });
