@@ -1,0 +1,13 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      NODE_ENV: production
+      BACKEND_PORT: 4000
+      FRONTEND_URL: http://localhost:5173
+      MIDNIGHT_NETWORK: ${MIDNIGHT_NETWORK:-preview}
+    ports: ["4000:4000"]
+  frontend:
+    build: ./frontend
+    depends_on: [backend]
+    ports: ["5173:80"]

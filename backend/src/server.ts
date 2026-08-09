@@ -1,0 +1,4 @@
+import 'dotenv/config'; import express from 'express'; import cors from 'cors'; import helmet from 'helmet'; import rateLimit from 'express-rate-limit'; import { health } from './routes/health.js'; import { data } from './routes/data.js'; import { errorHandler } from './middleware/error.js';
+const app=express(); const port=Number(process.env.BACKEND_PORT??4000); const origins=(process.env.FRONTEND_URL??'http://localhost:5173').split(',').map(x=>x.trim());
+app.use(helmet());app.use(cors({origin:(origin,cb)=>{if(!origin||origins.includes(origin))return cb(null,true);cb(new Error('CORS origin not allowed'));}}));app.use(express.json({limit:'256kb'}));app.use(rateLimit({windowMs:15*60*1000,limit:300,standardHeaders:true,legacyHeaders:false}));
+app.get('/healthz',(_req,res)=>res.json({ok:true})); app.use('/api/health',health);app.use('/api',data);app.use(errorHandler);app.listen(port,()=>console.log(`Nexora backend listening on http://localhost:${port}`));

@@ -1,0 +1,1 @@
+import { describe,it,expect } from 'vitest'; import { store } from './store.js'; describe('store boundary',()=>{it('starts empty and never invents blockchain data',()=>{expect(store.agents).toEqual([]);expect(store.escrows).toEqual([]);});});

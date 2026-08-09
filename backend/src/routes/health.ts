@@ -1,0 +1,1 @@
+import { Router } from 'express'; export const health=Router(); health.get('/',(_req,res)=>res.json({ok:true,service:'nexora-backend',network:process.env.MIDNIGHT_NETWORK??'preview',time:new Date().toISOString()}));

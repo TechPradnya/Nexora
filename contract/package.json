@@ -1,0 +1,1 @@
+{"name":"nexora-contract","private":true,"version":"1.0.0","type":"module","scripts":{"compile":"compact compile src/nexora.compact managed/nexora","test":"vitest run"},"devDependencies":{"typescript":"5.9.2","vitest":"3.2.4"},"dependencies":{"@midnight-ntwrk/compact-runtime":"0.16.0"}}

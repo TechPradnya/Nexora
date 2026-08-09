@@ -1,0 +1,208 @@
+pragma language_version >= 0.23;
+import CompactStandardLibrary;
+
+// Nexora privacy-preserving agent trust and escrow contract.
+// IMPORTANT: authorization is commitment-based. Do not replace it with ownPublicKey() equality.
+
+export struct Agent {
+  nameCommitment: Bytes<32>,
+  role: Uint<8>,
+  reputation: Uint<64>,
+  successful: Uint<64>,
+  unsuccessful: Uint<64>
+}
+
+export struct Policy {
+  nameCommitment: Bytes<32>,
+  minReputation: Uint<64>,
+  minPayment: Uint<64>,
+  maxPayment: Uint<64>,
+  requiredRole: Uint<8>,
+  verifierRequired: Boolean,
+  approvalRequired: Boolean
+}
+
+export struct Escrow {
+  client: Bytes<32>,
+  contractor: Bytes<32>,
+  verifier: Bytes<32>,
+  policyId: Bytes<32>,
+  amount: Uint<64>,
+  status: Uint<8>,
+  deliverableCommitment: Bytes<32>,
+  approved: Boolean
+}
+
+export ledger agents: Map<Bytes<32>, Agent>;
+export ledger agentAuth: Map<Bytes<32>, Bytes<32>>;
+export ledger policies: Map<Bytes<32>, Policy>;
+export ledger escrows: Map<Bytes<32>, Escrow>;
+export ledger escrowAuth: Map<Bytes<32>, Bytes<32>>;
+export ledger agentCount: Counter;
+export ledger policyCount: Counter;
+export ledger escrowCount: Counter;
+
+witness localSecretKey(): Bytes<32>;
+
+circuit authCommitment(agentId: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([
+    pad(32, "nexora:auth:v1:"), agentId, localSecretKey()
+  ]);
+}
+
+circuit requireAgent(agentId: Bytes<32>): [] {
+  assert(agentAuth.member(disclose(agentId)), "Agent is not registered");
+  assert(agentAuth.lookup(disclose(agentId)) == authCommitment(agentId), "Agent authorization failed");
+}
+
+export circuit registerAgent(
+  agentId: Bytes<32>,
+  nameCommitment: Bytes<32>,
+  role: Uint<8>
+): [] {
+  assert(!agents.member(disclose(agentId)), "Agent already registered");
+  assert(disclose(role >= 1 && role <= 4), "Invalid role");
+  const dId = disclose(agentId);
+  agents.insert(dId, Agent { nameCommitment: disclose(nameCommitment), role: disclose(role), reputation: 50, successful: 0, unsuccessful: 0 });
+  agentAuth.insert(dId, authCommitment(agentId));
+  agentCount.increment(1);
+}
+
+export circuit updateReputation(
+  escrowId: Bytes<32>,
+  success: Boolean
+): [] {
+  assert(escrows.member(disclose(escrowId)), "Escrow not found");
+  const escrow = escrows.lookup(disclose(escrowId));
+  assert(disclose(escrow.status == 7 || escrow.status == 6), "Settlement outcome is not final");
+  requireAgent(escrow.verifier);
+  const dId = disclose(escrow.contractor);
+  const current = agents.lookup(dId);
+  if (disclose(success)) {
+    agents.insert(dId, Agent { nameCommitment: current.nameCommitment, role: current.role, reputation: (current.reputation + 5) as Uint<64>, successful: (current.successful + 1) as Uint<64>, unsuccessful: current.unsuccessful });
+  } else {
+    if (disclose(current.reputation > 5)) {
+      agents.insert(dId, Agent { nameCommitment: current.nameCommitment, role: current.role, reputation: (current.reputation - 5) as Uint<64>, successful: current.successful, unsuccessful: (current.unsuccessful + 1) as Uint<64> });
+    } else {
+      agents.insert(dId, Agent { nameCommitment: current.nameCommitment, role: current.role, reputation: 0, successful: current.successful, unsuccessful: (current.unsuccessful + 1) as Uint<64> });
+    }
+  }
+}
+
+export circuit createPolicy(
+  policyId: Bytes<32>,
+  nameCommitment: Bytes<32>,
+  minReputation: Uint<64>,
+  minPayment: Uint<64>,
+  maxPayment: Uint<64>,
+  requiredRole: Uint<8>,
+  verifierRequired: Boolean,
+  approvalRequired: Boolean
+): [] {
+  assert(!policies.member(disclose(policyId)), "Policy already exists");
+  assert(disclose(minPayment <= maxPayment), "Invalid payment range");
+  assert(disclose(minReputation <= 100), "Invalid reputation threshold");
+  assert(disclose(requiredRole >= 1 && requiredRole <= 4), "Invalid role");
+  policies.insert(disclose(policyId), Policy { nameCommitment: disclose(nameCommitment), minReputation: disclose(minReputation), minPayment: disclose(minPayment), maxPayment: disclose(maxPayment), requiredRole: disclose(requiredRole), verifierRequired: disclose(verifierRequired), approvalRequired: disclose(approvalRequired) });
+  policyCount.increment(1);
+}
+
+export circuit createEscrow(
+  escrowId: Bytes<32>,
+  clientId: Bytes<32>,
+  contractor: Bytes<32>,
+  verifier: Bytes<32>,
+  policyId: Bytes<32>,
+  amount: Uint<64>
+): [] {
+  assert(!escrows.member(disclose(escrowId)), "Escrow already exists");
+  requireAgent(clientId);
+  assert(agents.member(disclose(contractor)), "Contractor is not registered");
+  assert(agents.member(disclose(verifier)), "Verifier is not registered");
+  assert(policies.member(disclose(policyId)), "Policy not found");
+  const policy = policies.lookup(disclose(policyId));
+  const contractorAgent = agents.lookup(disclose(contractor));
+  assert(disclose(contractorAgent.reputation >= policy.minReputation), "Contractor reputation below policy minimum");
+  assert(disclose(amount >= policy.minPayment && amount <= policy.maxPayment), "Payment violates policy");
+  assert(disclose(contractorAgent.role == policy.requiredRole), "Contractor role violates policy");
+  if (disclose(policy.verifierRequired)) { assert(disclose(verifier != contractor), "Verifier must be independent"); }
+  const client = disclose(clientId);
+  escrows.insert(disclose(escrowId), Escrow { client: client, contractor: disclose(contractor), verifier: disclose(verifier), policyId: disclose(policyId), amount: disclose(amount), status: 1, deliverableCommitment: disclose(persistentHash<Bytes<32>>(pad(32, "nexora:empty:"))), approved: false });
+  escrowAuth.insert(disclose(escrowId), authCommitment(clientId));
+  escrowCount.increment(1);
+}
+
+export circuit fundEscrow(escrowId: Bytes<32>, amount: Uint<64>): [] {
+  assert(escrows.member(disclose(escrowId)), "Escrow not found");
+  const e = escrows.lookup(disclose(escrowId));
+  assert(disclose(e.status == 1), "Escrow is not awaiting funding");
+  requireAgent(e.client);
+  assert(disclose(amount == e.amount), "Funding amount does not match escrow");
+  // The asset movement is intentionally a real Midnight token operation, not a UI balance mutation.
+  receiveUnshielded(tokenType(pad(32, "nexora:nxr:v1:"), kernel.self()), disclose(amount));
+  escrows.insert(disclose(escrowId), Escrow { client: e.client, contractor: e.contractor, verifier: e.verifier, policyId: e.policyId, amount: e.amount, status: 2, deliverableCommitment: e.deliverableCommitment, approved: false });
+}
+
+export circuit submitDeliverable(escrowId: Bytes<32>, commitment: Bytes<32>): [] {
+  assert(escrows.member(disclose(escrowId)), "Escrow not found");
+  const e = escrows.lookup(disclose(escrowId));
+  assert(disclose(e.status == 2), "Escrow is not funded");
+  requireAgent(e.contractor);
+  escrows.insert(disclose(escrowId), Escrow { client: e.client, contractor: e.contractor, verifier: e.verifier, policyId: e.policyId, amount: e.amount, status: 3, deliverableCommitment: disclose(commitment), approved: false });
+}
+
+export circuit approveDeliverable(escrowId: Bytes<32>): [] {
+  assert(escrows.member(disclose(escrowId)), "Escrow not found");
+  const e = escrows.lookup(disclose(escrowId));
+  assert(disclose(e.status == 3), "Escrow is not ready for verification");
+  requireAgent(e.verifier);
+  escrows.insert(disclose(escrowId), Escrow { client: e.client, contractor: e.contractor, verifier: e.verifier, policyId: e.policyId, amount: e.amount, status: 5, deliverableCommitment: e.deliverableCommitment, approved: true });
+}
+
+export circuit rejectDeliverable(escrowId: Bytes<32>): [] {
+  assert(escrows.member(disclose(escrowId)), "Escrow not found");
+  const e = escrows.lookup(disclose(escrowId));
+  assert(disclose(e.status == 3), "Escrow is not under verification");
+  requireAgent(e.verifier);
+  escrows.insert(disclose(escrowId), Escrow { client: e.client, contractor: e.contractor, verifier: e.verifier, policyId: e.policyId, amount: e.amount, status: 6, deliverableCommitment: e.deliverableCommitment, approved: false });
+}
+
+export circuit releaseEscrow(escrowId: Bytes<32>, contractorAddress: UserAddress): [] {
+  // Release is authorized by the assigned verifier; the verifier must prove knowledge of its private secret.
+
+  assert(escrows.member(disclose(escrowId)), "Escrow not found");
+  const e = escrows.lookup(disclose(escrowId));
+  assert(disclose(e.status == 5 && e.approved), "Escrow is not approved");
+  requireAgent(e.verifier);
+  const policy = policies.lookup(disclose(e.policyId));
+  assert(disclose(policy.approvalRequired), "Release policy mismatch");
+  const color = tokenType(pad(32, "nexora:nxr:v1:"), kernel.self());
+  sendUnshielded(color, disclose(e.amount), disclose(right<ContractAddress, UserAddress>(disclose(contractorAddress))));
+  escrows.insert(disclose(escrowId), Escrow { client: e.client, contractor: e.contractor, verifier: e.verifier, policyId: e.policyId, amount: e.amount, status: 7, deliverableCommitment: e.deliverableCommitment, approved: true });
+  // Reputation is updated only from the contract-controlled settlement outcome.
+  const contractorAgent = agents.lookup(disclose(e.contractor));
+  const nextRep = (contractorAgent.reputation + 5) as Uint<64>;
+  agents.insert(disclose(e.contractor), Agent { nameCommitment: contractorAgent.nameCommitment, role: contractorAgent.role, reputation: nextRep, successful: (contractorAgent.successful + 1) as Uint<64>, unsuccessful: contractorAgent.unsuccessful });
+}
+
+export circuit cancelEscrow(escrowId: Bytes<32>): [] {
+  assert(escrows.member(disclose(escrowId)), "Escrow not found");
+  const e = escrows.lookup(disclose(escrowId));
+  assert(disclose(e.status == 1 || e.status == 6), "Escrow cannot be cancelled in its current state");
+  escrows.insert(disclose(escrowId), Escrow { client: e.client, contractor: e.contractor, verifier: e.verifier, policyId: e.policyId, amount: e.amount, status: 8, deliverableCommitment: e.deliverableCommitment, approved: false });
+}
+
+export circuit getAgent(agentId: Bytes<32>): Agent {
+  assert(agents.member(disclose(agentId)), "Agent not found");
+  return agents.lookup(disclose(agentId));
+}
+
+export circuit getPolicy(policyId: Bytes<32>): Policy {
+  assert(policies.member(disclose(policyId)), "Policy not found");
+  return policies.lookup(disclose(policyId));
+}
+
+export circuit getEscrow(escrowId: Bytes<32>): Escrow {
+  assert(escrows.member(disclose(escrowId)), "Escrow not found");
+  return escrows.lookup(disclose(escrowId));
+}

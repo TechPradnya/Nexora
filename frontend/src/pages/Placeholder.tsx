@@ -1,0 +1,1 @@
+export function Placeholder({title}:{title:string}){return <div className="empty"><div className="empty-ring">◌</div><h3>{title}</h3><p>This route is intentionally protected from fake blockchain state. Use the connected contract workflow to populate it.</p></div>}
