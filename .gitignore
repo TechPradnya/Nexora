@@ -27,3 +27,9 @@ contract/managed/
 
 # Test coverage
 coverage/
+
+# Frontend generated development/build metadata
+frontend/.vite/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts

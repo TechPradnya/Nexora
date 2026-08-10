@@ -1,4 +1,11 @@
 import type { ConnectedAPI } from '@midnight-ntwrk/dapp-connector-api';
+import {
+  Transaction,
+  type SignatureEnabled,
+  type Proof,
+  type Binding,
+} from '@midnight-ntwrk/ledger-v8';
+import { fromHex, toHex } from '@midnight-ntwrk/midnight-js-utils';
 
 export type MidnightContext = {
   connected: ConnectedAPI;
@@ -89,23 +96,27 @@ export async function createMidnightContext(
    * Wallet provider
    */
   const walletProvider = {
-    coinPublicKey:
+    getCoinPublicKey: () =>
       addresses.shieldedCoinPublicKey,
 
-    encryptionPublicKey:
+    getEncryptionPublicKey: () =>
       addresses.shieldedEncryptionPublicKey,
 
-    balanceTx: async (
-      tx: any,
-      newCoins: any,
-    ) => {
-      const { tx: balanced } =
+    balanceTx: async (tx: any, _ttl?: Date) => {
+      const serialized = toHex(tx.serialize());
+
+      const balanced =
         await connected.balanceUnsealedTransaction(
-          tx,
-          newCoins,
+          serialized,
+          {},
         );
 
-      return balanced;
+      return Transaction.deserialize<SignatureEnabled, Proof, Binding>(
+        'signature',
+        'proof',
+        'binding',
+        fromHex(balanced.tx),
+      );
     },
   };
 
@@ -113,8 +124,13 @@ export async function createMidnightContext(
    * Midnight transaction provider
    */
   const midnightProvider = {
-    submitTx: (tx: any) =>
-      connected.submitTransaction(tx),
+    submitTx: async (tx: any) => {
+      await connected.submitTransaction(
+        toHex(tx.serialize()),
+      );
+
+      return tx.identifiers()[0];
+    },
   };
 
   /*
