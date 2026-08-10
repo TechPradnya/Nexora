@@ -1,16 +1,29 @@
+# Dependencies
 node_modules/
+
+# Environment variables
 .env
 .env.*
 !.env.example
+
+# OS / Editor files
 .DS_Store
 .vscode/
-*.log
+
+# Logs
+*.log*
+
+# Frontend build output
 frontend/dist/
+
+# Backend build output
 backend/dist/
-contract/managed/*/contract/
-contract/managed/*/zkir/
-contract/managed/*/keys/
-contract/managed/*/*.cjs
-contract/managed/*/*.js
+
+# Midnight / Compact generated contract artifacts
+contract/managed/
+
+# Midnight local data
 .midnight/
+
+# Test coverage
 coverage/
