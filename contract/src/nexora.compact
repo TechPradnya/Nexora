@@ -64,7 +64,7 @@ export circuit registerAgent(
   assert(disclose(role >= 1 && role <= 4), "Invalid role");
   const dId = disclose(agentId);
   agents.insert(dId, Agent { nameCommitment: disclose(nameCommitment), role: disclose(role), reputation: 50, successful: 0, unsuccessful: 0 });
-  agentAuth.insert(dId, authCommitment(agentId));
+  agentAuth.insert(dId, disclose(authCommitment(agentId)));
   agentCount.increment(1);
 }
 
@@ -128,7 +128,7 @@ export circuit createEscrow(
   if (disclose(policy.verifierRequired)) { assert(disclose(verifier != contractor), "Verifier must be independent"); }
   const client = disclose(clientId);
   escrows.insert(disclose(escrowId), Escrow { client: client, contractor: disclose(contractor), verifier: disclose(verifier), policyId: disclose(policyId), amount: disclose(amount), status: 1, deliverableCommitment: disclose(persistentHash<Bytes<32>>(pad(32, "nexora:empty:"))), approved: false });
-  escrowAuth.insert(disclose(escrowId), authCommitment(clientId));
+  escrowAuth.insert(disclose(escrowId), disclose(authCommitment(clientId)));
   escrowCount.increment(1);
 }
 
