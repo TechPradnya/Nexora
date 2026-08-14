@@ -50,8 +50,41 @@ export async function createMidnightProviders(
   setNetworkId(config.networkId as any);
 
   const zk = new FetchZkConfigProvider(
-    `${window.location.origin}/contract/`,
-    fetch.bind(window),
+    `${window.location.origin}/contract/managed/nexora/`,
+    async (input, init) => {
+      const originalUrl =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+      const decodedUrl = decodeURIComponent(originalUrl);
+
+      const folder = decodedUrl.includes('/zkir/')
+        ? 'zkir'
+        : 'keys';
+
+      const filename = decodedUrl
+        .split('/')
+        .pop() || '';
+
+      const circuitName = filename.includes('#')
+        ? filename.split('#').pop() || filename
+        : filename;
+
+      const correctedUrl =
+        `${window.location.origin}/contract/managed/nexora/${folder}/${encodeURIComponent(circuitName)}`;
+
+      console.log(
+        '[Nexora] ZK artifact request:',
+        originalUrl,
+        '=>',
+        correctedUrl,
+      );
+
+      return fetch(correctedUrl, init);
+    },
   );
 
   const proof = httpClientProofProvider(

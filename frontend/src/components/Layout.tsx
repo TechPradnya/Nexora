@@ -91,7 +91,7 @@ export function Layout() {
       const initialPrivateState =
         createNexoraPrivateState();
 
-      const deployed =
+      const { deployed, contractAddress } =
         await deployNexora(
           api,
           providers,
@@ -102,15 +102,18 @@ export function Layout() {
         deployed.deployTxData?.public?.txId;
 
       setDeployMessage(
-        txId
-          ? `Nexora deployment submitted/finalized. Transaction: ${txId}`
-          : 'Nexora deployment completed. Check the wallet/network for the deployed contract address.',
+        contractAddress
+          ? `Nexora deployment completed. Contract address: ${contractAddress}`
+          : txId
+            ? `Nexora deployment submitted/finalized. Transaction: ${txId}`
+            : 'Nexora deployment completed. Check the wallet/network for the deployed contract address.',
       );
 
       console.log(
         '[Nexora] Deployment completed.',
         {
           txId,
+          contractAddress,
         },
       );
     } catch (error: unknown) {

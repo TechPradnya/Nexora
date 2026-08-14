@@ -28,5 +28,17 @@ export async function deployNexora(
     } as any,
   );
 
-  return deployed;
+  const contractAddress =
+    deployed.deployTxData.public.contractAddress;
+
+  if (!contractAddress) {
+    throw new Error(
+      'Midnight deployment completed without a contract address.',
+    );
+  }
+
+  return {
+    deployed,
+    contractAddress,
+  };
 }

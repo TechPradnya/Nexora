@@ -38,25 +38,38 @@ export async function createMidnightProviders(
             ? input.toString()
             : input.url;
 
-      const url = new URL(originalUrl);
+      const decodedUrl = decodeURIComponent(originalUrl);
 
-      const filename =
-        decodeURIComponent(
-          url.pathname.split('/').pop() ?? '',
+      const folder = decodedUrl.includes('/zkir/')
+        ? 'zkir'
+        : 'keys';
+
+      const marker =
+        `/contract/managed/nexora/${folder}/`;
+
+      const markerIndex =
+        decodedUrl.indexOf(marker);
+
+      if (markerIndex === -1) {
+        throw new Error(
+          `[Nexora] Invalid ZK artifact URL: ${originalUrl}`,
+        );
+      }
+
+      let filename =
+        decodedUrl.slice(
+          markerIndex + marker.length,
         );
 
-      const circuitName =
-        filename.includes('#')
-          ? filename.split('#').pop()
-          : filename;
+      filename = filename.split('?')[0];
 
-      const folder =
-        url.pathname.includes('/zkir/')
-          ? 'zkir'
-          : 'keys';
+      if (filename.startsWith('nexora#')) {
+        filename =
+          filename.slice('nexora#'.length);
+      }
 
       const correctedUrl =
-        `${window.location.origin}/contract/managed/nexora/${folder}/${encodeURIComponent(circuitName ?? '')}`;
+        `${window.location.origin}/contract/managed/nexora/${folder}/${encodeURIComponent(filename)}`;
 
       console.log(
         '[Nexora] ZK artifact request:',
@@ -75,10 +88,11 @@ export async function createMidnightProviders(
     zk,
   );
 
-  const publicData = indexerPublicDataProvider(
-    config.indexerUri,
-    config.indexerWsUri,
-  );
+  const publicData =
+    indexerPublicDataProvider(
+      config.indexerUri,
+      config.indexerWsUri,
+    );
 
   const addresses =
     await connected.getShieldedAddresses();
@@ -96,7 +110,8 @@ export async function createMidnightProviders(
       accountId,
 
       privateStoragePasswordProvider: () =>
-        import.meta.env.VITE_PRIVATE_STATE_PASSWORD || '',
+        import.meta.env
+          .VITE_PRIVATE_STATE_PASSWORD || '',
     });
 
   const walletProvider = {
@@ -110,7 +125,8 @@ export async function createMidnightProviders(
       tx: any,
       _ttl?: Date,
     ) => {
-      const serialized = toHex(tx.serialize());
+      const serialized =
+        toHex(tx.serialize());
 
       const balanced =
         await connected.balanceUnsealedTransaction(
