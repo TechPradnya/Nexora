@@ -6,6 +6,8 @@ import {
   type Binding,
 } from '@midnight-ntwrk/ledger-v8';
 import { fromHex, toHex } from '@midnight-ntwrk/midnight-js-utils';
+import { CompiledContract } from '@midnight-ntwrk/midnight-js-protocol/compact-js';
+import { Contract } from '../contracts/nexora-compiled.js';
 
 export type MidnightContext = {
   connected: ConnectedAPI;
@@ -159,49 +161,26 @@ export async function createMidnightContext(
   }
 
   /*
-   * The generated Compact contract artifact is created
-   * during the Midnight contract compilation/deployment
-   * process.
+   * The generated Compact contract artifact is imported
+   * at build time via Vite's module graph. This allows
+   * Vite to resolve the @midnight-ntwrk/compact-runtime
+   * bare specifier that the generated contract depends on.
    *
-   * It is intentionally loaded at runtime so Vite does not
-   * try to resolve the missing generated artifact while
-   * displaying the frontend UI.
+   * ZK proof artifacts (prover/verifier keys, bzkir files)
+   * are served at runtime from frontend/public/contract/.
    */
-  const contractArtifactPath =
-    '/contract/contract/index.cjs';
-
-  let generated: any = null;
-
-  try {
-    const runtimeImport = new Function(
-      'path',
-      'return import(path)',
-    ) as (
-      path: string,
-    ) => Promise<any>;
-
-    generated = await runtimeImport(
-      contractArtifactPath,
-    );
-  } catch {
-    generated = null;
-  }
-
-  if (!generated) {
-    throw new Error(
-      'Compiled Nexora contract artifacts are missing. ' +
-        'Compile the Nexora Compact contract and copy the ' +
-        'generated contract artifacts into frontend/public/contract.',
-    );
-  }
+  const compiledContract = CompiledContract.make(
+    'nexora',
+    Contract,
+  ) as any;
 
   /*
    * Find the deployed Nexora contract.
    */
   const found = await findDeployedContract(
-    providers,
+    providers as any,
     {
-      compiledContract: generated,
+      compiledContract,
       contractAddress,
       privateStateId: 'nexora',
     },

@@ -127,13 +127,19 @@ export function WalletProvider({
       /*
        * Get the shielded wallet address.
        */
-      const addresses =
-        await connected.getShieldedAddresses();
+  let shieldedAddress: string | undefined;
 
-      setAddress(
-        addresses.shieldedAddress,
-      );
-
+  try {
+    const addresses = await connected.getShieldedAddresses();
+    shieldedAddress = addresses.shieldedAddress;
+    setAddress(shieldedAddress);
+  } catch (addressError) {
+    console.warn(
+      "[Nexora] Shielded address is temporarily unavailable:",
+      addressError,
+    );
+    setAddress(undefined);
+  }
       /*
        * IMPORTANT:
        *
@@ -167,19 +173,13 @@ export function WalletProvider({
       setTxState('Success');
 
       console.log(
-        '[Nexora] Midnight wallet connected.',
+        "[Nexora] Midnight wallet connected.",
         {
           network: config.networkId,
-          address:
-            addresses.shieldedAddress,
+          address: shieldedAddress,
         },
       );
     } catch (error: unknown) {
-      console.error(
-        '[Nexora] Wallet connection failed:',
-        error,
-      );
-
       setTxState('Failed');
 
       const message =
