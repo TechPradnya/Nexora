@@ -13,7 +13,12 @@ import {
   listInjectedWallets,
 } from '../lib/wallet';
 
-import type { MidnightContext } from '../lib/midnight';
+import {
+  createMidnightContext,
+  createMidnightProviders,
+  type MidnightContext,
+  type MidnightProviders,
+} from '../lib/midnight';
 
 import type { TxState } from '../types/domain';
 
@@ -26,6 +31,7 @@ type WalletState = {
 
   api?: ConnectedAPI;
   ctx?: MidnightContext;
+  providers?: MidnightProviders;
 
   txState: TxState;
   error?: string;
@@ -42,29 +48,20 @@ export function WalletProvider({
   children: React.ReactNode;
 }) {
   const [available, setAvailable] = useState(false);
-
   const [api, setApi] = useState<ConnectedAPI>();
-
   const [ctx, setCtx] = useState<MidnightContext>();
-
+  const [providers, setProviders] =
+    useState<MidnightProviders>();
   const [address, setAddress] = useState<string>();
-
   const [network, setNetwork] = useState<string>();
-
   const [txState, setTxState] =
     useState<TxState>('Idle');
+  const [error, setError] = useState<string>();
 
-  const [error, setError] =
-    useState<string>();
-
-  /*
-   * Detect the 1AM / Midnight wallet extension.
-   */
   useEffect(() => {
     const checkWallet = () => {
       try {
         const wallets = listInjectedWallets();
-
         setAvailable(wallets.length > 0);
       } catch {
         setAvailable(false);
@@ -83,17 +80,6 @@ export function WalletProvider({
     };
   }, []);
 
-  /*
-   * Connect to the Midnight wallet.
-   *
-   * IMPORTANT:
-   * At this stage we only connect the wallet.
-   *
-   * We DO NOT initialize the complete Midnight
-   * contract/provider stack yet because Nexora does
-   * not have a deployed contract address/artifacts
-   * on this laptop.
-   */
   const connect = async (): Promise<void> => {
     setTxState('Connecting');
     setError(undefined);
@@ -102,105 +88,101 @@ export function WalletProvider({
       const requestedNetwork =
         import.meta.env.VITE_NETWORK_ID || 'preview';
 
-      /*
-       * Connect to 1AM / Midnight wallet.
-       */
       const {
         api: connected,
       } = await connectMidnight(
         requestedNetwork,
       );
 
-      /*
-       * Save connected wallet API.
-       */
       setApi(connected);
 
-      /*
-       * Get wallet configuration.
-       */
       const config =
         await connected.getConfiguration();
 
       setNetwork(config.networkId);
 
-      /*
-       * Get the shielded wallet address.
-       */
-  let shieldedAddress: string | undefined;
+      const addresses =
+        await connected.getShieldedAddresses();
 
-  try {
-    const addresses = await connected.getShieldedAddresses();
-    shieldedAddress = addresses.shieldedAddress;
-    setAddress(shieldedAddress);
-  } catch (addressError) {
-    console.warn(
-      "[Nexora] Shielded address is temporarily unavailable:",
-      addressError,
-    );
-    setAddress(undefined);
-  }
-      /*
-       * IMPORTANT:
-       *
-       * We intentionally do NOT call:
-       *
-       * createMidnightContext(...)
-       *
-       * here.
-       *
-       * That function initializes:
-       * - Midnight JS providers
-       * - ZK configuration
-       * - proof provider
-       * - indexer
-       * - private state
-       * - deployed contract
-       *
-       * Nexora does not have the deployed contract
-       * configured yet.
-       *
-       * We will enable it after:
-       *
-       * 1. Compact compilation
-       * 2. Contract deployment
-       * 3. VITE_CONTRACT_ADDRESS
-       * 4. Browser contract artifacts
-       */
+      setAddress(
+        addresses.shieldedAddress,
+      );
 
-      setCtx(undefined);
+      /*
+       * Create the Midnight providers now that the
+       * wallet connection is available.
+       *
+       * This does NOT deploy a contract.
+       */
+      const base =
+        await createMidnightProviders(
+          connected,
+        );
+
+      setProviders(base.providers);
+
+      /*
+       * If a real deployed contract address already
+       * exists in the environment, initialize the
+       * application contract context as well.
+       *
+       * Otherwise we remain in provider-only mode,
+       * ready for the deployment action.
+       */
+      if (
+        import.meta.env.VITE_CONTRACT_ADDRESS
+      ) {
+        const contractContext =
+          await createMidnightContext(
+            connected,
+          );
+
+        setCtx(contractContext);
+      } else {
+        setCtx(undefined);
+      }
 
       setTxState('Success');
 
       console.log(
-        "[Nexora] Midnight wallet connected.",
+        '[Nexora] Midnight wallet and providers ready.',
         {
           network: config.networkId,
-          address: shieldedAddress,
+          address:
+            addresses.shieldedAddress,
+          contractConfigured:
+            Boolean(
+              import.meta.env
+                .VITE_CONTRACT_ADDRESS,
+            ),
         },
       );
     } catch (error: unknown) {
+      console.error(
+        '[Nexora] Wallet/provider initialization failed:',
+        error,
+      );
+
       setTxState('Failed');
 
       const message =
         error instanceof Error
           ? error.message
-          : 'Unable to connect to Midnight wallet.';
+          : 'Unable to initialize Midnight wallet.';
 
       setError(message);
 
       setApi(undefined);
+      setProviders(undefined);
       setAddress(undefined);
       setNetwork(undefined);
       setCtx(undefined);
     }
   };
 
-  /*
-   * Disconnect the local Nexora wallet state.
-   */
   const disconnect = () => {
     setApi(undefined);
+    setProviders(undefined);
     setCtx(undefined);
     setAddress(undefined);
     setNetwork(undefined);
@@ -208,7 +190,7 @@ export function WalletProvider({
     setError(undefined);
   };
 
-  const value = useMemo<WalletState>(
+  const value = useMemo(
     () => ({
       available,
 
@@ -219,6 +201,7 @@ export function WalletProvider({
 
       api,
       ctx,
+      providers,
 
       txState,
       error,
@@ -232,6 +215,7 @@ export function WalletProvider({
       address,
       network,
       ctx,
+      providers,
       txState,
       error,
     ],

@@ -7,30 +7,9 @@ import {
 } from '@midnight-ntwrk/ledger-v8';
 import { fromHex, toHex } from '@midnight-ntwrk/midnight-js-utils';
 
-export type MidnightProviders = {
-  privateStateProvider: any;
-  publicDataProvider: any;
-  zkConfigProvider: any;
-  proofProvider: any;
-  walletProvider: any;
-  midnightProvider: any;
-};
-
-export type MidnightContext = {
-  connected: ConnectedAPI;
-  networkId: string;
-  providers: MidnightProviders;
-  contract?: any;
-  address: string;
-};
-
 export async function createMidnightProviders(
   connected: ConnectedAPI,
-): Promise<{
-  networkId: string;
-  providers: MidnightProviders;
-  address: string;
-}> {
+) {
   const [
     { setNetworkId },
     { FetchZkConfigProvider },
@@ -65,16 +44,32 @@ export async function createMidnightProviders(
         ? 'zkir'
         : 'keys';
 
-      const filename = decodedUrl
-        .split('/')
-        .pop() || '';
+      const marker =
+        `/contract/managed/nexora/${folder}/`;
 
-      const circuitName = filename.includes('#')
-        ? filename.split('#').pop() || filename
-        : filename;
+      const markerIndex =
+        decodedUrl.indexOf(marker);
+
+      if (markerIndex === -1) {
+        throw new Error(
+          `[Nexora] Invalid ZK artifact URL: ${originalUrl}`,
+        );
+      }
+
+      let filename =
+        decodedUrl.slice(
+          markerIndex + marker.length,
+        );
+
+      filename = filename.split('?')[0];
+
+      if (filename.startsWith('nexora#')) {
+        filename =
+          filename.slice('nexora#'.length);
+      }
 
       const correctedUrl =
-        `${window.location.origin}/contract/managed/nexora/${folder}/${encodeURIComponent(circuitName)}`;
+        `${window.location.origin}/contract/managed/nexora/${folder}/${encodeURIComponent(filename)}`;
 
       console.log(
         '[Nexora] ZK artifact request:',
@@ -93,10 +88,11 @@ export async function createMidnightProviders(
     zk,
   );
 
-  const publicData = indexerPublicDataProvider(
-    config.indexerUri,
-    config.indexerWsUri,
-  );
+  const publicData =
+    indexerPublicDataProvider(
+      config.indexerUri,
+      config.indexerWsUri,
+    );
 
   const addresses =
     await connected.getShieldedAddresses();
@@ -110,9 +106,12 @@ export async function createMidnightProviders(
     levelPrivateStateProvider({
       privateStateStoreName:
         'nexora-private-state',
+
       accountId,
+
       privateStoragePasswordProvider: () =>
-        import.meta.env.VITE_PRIVATE_STATE_PASSWORD || '',
+        import.meta.env
+          .VITE_PRIVATE_STATE_PASSWORD || '',
     });
 
   const walletProvider = {
@@ -126,9 +125,8 @@ export async function createMidnightProviders(
       tx: any,
       _ttl?: Date,
     ) => {
-      const serialized = toHex(
-        tx.serialize(),
-      );
+      const serialized =
+        toHex(tx.serialize());
 
       const balanced =
         await connected.balanceUnsealedTransaction(
@@ -160,8 +158,8 @@ export async function createMidnightProviders(
   };
 
   return {
-    networkId: config.networkId,
-    address: addresses.shieldedAddress,
+    config,
+    addresses,
     providers: {
       privateStateProvider,
       publicDataProvider: publicData,
@@ -171,71 +169,4 @@ export async function createMidnightProviders(
       midnightProvider,
     },
   };
-}
-
-export async function createMidnightContext(
-  connected: ConnectedAPI,
-): Promise<MidnightContext> {
-  const base =
-    await createMidnightProviders(
-      connected,
-    );
-
-  const contractAddress =
-    import.meta.env.VITE_CONTRACT_ADDRESS;
-
-  if (!contractAddress) {
-    throw new Error(
-      'VITE_CONTRACT_ADDRESS is not configured. ' +
-      'Deploy the Nexora contract first.',
-    );
-  }
-
-  const {
-    findDeployedContract,
-  } = await import(
-    '@midnight-ntwrk/midnight-js-contracts'
-  );
-
-  const { CompiledContract } =
-    await import(
-      '@midnight-ntwrk/midnight-js-protocol/compact-js'
-    );
-
-  const {
-    nexoraContractWithAssets,
-  } = await import(
-    './nexoraContract'
-  );
-
-  const found =
-    await findDeployedContract(
-      base.providers,
-      {
-        compiledContract:
-          nexoraContractWithAssets,
-        contractAddress,
-        privateStateId: 'nexora',
-      },
-    );
-
-  return {
-    connected,
-    networkId: base.networkId,
-    providers: base.providers,
-    contract: found,
-    address: base.address,
-  };
-}
-
-export function requireContract(
-  ctx: MidnightContext | null,
-): MidnightContext {
-  if (!ctx?.contract) {
-    throw new Error(
-      'Connect a Midnight wallet and configure the deployed Nexora contract first.',
-    );
-  }
-
-  return ctx;
 }

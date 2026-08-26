@@ -189,6 +189,7 @@ export circuit cancelEscrow(escrowId: Bytes<32>): [] {
   assert(escrows.member(disclose(escrowId)), "Escrow not found");
   const e = escrows.lookup(disclose(escrowId));
   assert(disclose(e.status == 1 || e.status == 6), "Escrow cannot be cancelled in its current state");
+  requireAgent(e.client);
   escrows.insert(disclose(escrowId), Escrow { client: e.client, contractor: e.contractor, verifier: e.verifier, policyId: e.policyId, amount: e.amount, status: 8, deliverableCommitment: e.deliverableCommitment, approved: false });
 }
 
