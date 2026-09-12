@@ -85,6 +85,7 @@ export default defineConfig({
      */
     include: [
       '@midnight-ntwrk/compact-runtime',
+      'events',
     ],
 
     exclude: [
