@@ -1,0 +1,1 @@
+export function StatCard({label,value,sub,icon}:{label:string;value:string|number;sub:string;icon:string}){return <div className="stat-card"><div className="stat-icon">{icon}</div><span>{label}</span><strong>{value}</strong><small>{sub}</small></div>}

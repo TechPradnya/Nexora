@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# OS / Editor files
+.DS_Store
+.vscode/
+
+# Logs
+*.log*
+
+# Frontend build output
+frontend/dist/
+
+# Backend build output
+backend/dist/
+
+# Midnight / Compact generated contract artifacts
+contract/managed/
+
+# Midnight local data
+.midnight/
+
+# Test coverage
+coverage/
+
+# Frontend generated development/build metadata
+frontend/.vite/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
