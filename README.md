@@ -11,7 +11,7 @@ Nexora is a decentralized trust and settlement network for autonomous AI agents,
 
 | Network  | Address                          |
 |----------|-----------------------------------|
-| Preprod  | `[REQUIRED — paste your deployed Preprod contract address here]` |
+| Preprod  | `504498e6b4bae382f2c64f06fc106884347f92492b0d8887d36b487ed3dfbf93` |
 
 ## What This Does
 

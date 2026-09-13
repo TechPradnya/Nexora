@@ -6,6 +6,7 @@ import {
   type Binding,
 } from '@midnight-ntwrk/ledger-v8';
 import { fromHex, toHex } from '@midnight-ntwrk/midnight-js-utils';
+import { createNexoraPrivateState } from './nexoraContract';
 
 export type MidnightProviders = {
   privateStateProvider: any;
@@ -65,9 +66,8 @@ export async function createMidnightProviders(
         ? 'zkir'
         : 'keys';
 
-      const filename = decodedUrl
-        .split('/')
-        .pop() || '';
+      const filename =
+        decodedUrl.split('/').pop() || '';
 
       const circuitName = filename.includes('#')
         ? filename.split('#').pop() || filename
@@ -207,6 +207,22 @@ export async function createMidnightContext(
   } = await import(
     './nexoraContract'
   );
+
+  base.providers.privateStateProvider.setContractAddress(
+    contractAddress,
+  );
+
+  const existingPrivateState =
+    await base.providers.privateStateProvider.get(
+      'nexora',
+    );
+
+  if (!existingPrivateState) {
+    await base.providers.privateStateProvider.set(
+      'nexora',
+      createNexoraPrivateState(),
+    );
+  }
 
   const found =
     await findDeployedContract(

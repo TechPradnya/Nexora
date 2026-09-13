@@ -1,2 +1,157 @@
-import { useEffect,useState } from 'react'; import { Link } from 'react-router-dom'; import { Search, UserPlus } from 'lucide-react'; import { api } from '../lib/api'; import type { Agent } from '../types/domain'; import { EmptyState } from '../components/EmptyState';
-export function Agents(){const [items,setItems]=useState<Agent[]>([]);const [q,setQ]=useState('');const [err,setErr]=useState('');useEffect(()=>{api.agents().then(x=>setItems(x.items)).catch(e=>setErr(e.message));},[]);const filtered=items.filter(a=>`${a.name} ${a.role} ${a.id}`.toLowerCase().includes(q.toLowerCase()));return <><div className="page-intro"><div><p className="eyebrow">IDENTITY REGISTRY</p><h2>Agent network</h2><p>Discover registered agents and their settlement reputation.</p></div><Link to="/agents/register" className="button primary"><UserPlus size={16}/> Register agent</Link></div><div className="toolbar"><div className="search"><Search size={16}/><input placeholder="Search agent, role or identifier" value={q} onChange={e=>setQ(e.target.value)}/></div><span>{items.length} registered</span></div>{err?<div className="alert error">{err}</div>:filtered.length?<div className="table-wrap"><table><thead><tr><th>Agent</th><th>Role</th><th>Reputation</th><th>Settlements</th><th>Registered</th></tr></thead><tbody>{filtered.map(a=><tr key={a.id}><td><b>{a.name}</b><small className="mono">{a.id.slice(0,18)}…</small></td><td><span className="role">{a.role}</span></td><td><strong>{a.reputation}</strong><div className="meter"><i style={{width:`${Math.min(100,Math.max(0,a.reputation))}%`}}/></div></td><td>{a.successfulSettlements} success / {a.unsuccessfulSettlements} failed</td><td>{new Date(a.registeredAt).toLocaleDateString()}</td></tr>)}</tbody></table></div>:<EmptyState title="No indexed agents" description="Register the first agent through the Midnight contract. The backend intentionally does not invent blockchain records." action={<Link className="button ghost" to="/agents/register">Register agent</Link>}/>}</>}
+import { useEffect, useState } from 'react';
+
+import { useWallet } from '../contexts/WalletContext';
+import { ledger } from '../generated/nexora/contract';
+import type { Agent, Role } from '../types/domain';
+
+type OnChainAgent = Agent;
+
+function roleName(role: bigint): Role {
+  switch (Number(role)) {
+    case 1:
+      return 'Client';
+    case 2:
+      return 'Contractor';
+    case 3:
+      return 'Verifier';
+    case 4:
+      return 'Orchestrator';
+    default:
+      return 'Client';
+  }
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export function Agents() {
+  const { ctx, connected } = useWallet();
+
+  const [items, setItems] = useState<OnChainAgent[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>();
+
+  useEffect(() => {
+    if (!connected || !ctx) {
+      setItems([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadAgents = async () => {
+      setLoading(true);
+      setError(undefined);
+
+      try {
+        const contractAddress =
+          import.meta.env.VITE_CONTRACT_ADDRESS;
+
+        if (!contractAddress) {
+          throw new Error(
+            'Nexora contract address is not configured.',
+          );
+        }
+
+        const contractState =
+          await ctx.providers.publicDataProvider.queryContractState(
+            contractAddress,
+          );
+
+        if (!contractState) {
+          throw new Error(
+            'No public contract state was found for the Nexora contract.',
+          );
+        }
+
+        const state = ledger(contractState.data);
+        const agents: OnChainAgent[] = [];
+
+        for (const [id, value] of state.agents) {
+          agents.push({
+            id: bytesToHex(id),
+            name: `Agent ${bytesToHex(id).slice(0, 8)}`,
+            role: roleName(value.role),
+            reputation: Number(value.reputation),
+            successfulSettlements: Number(value.successful),
+            unsuccessfulSettlements: Number(value.unsuccessful),
+            registeredAt: 0,
+          });
+        }
+
+        if (!cancelled) {
+          setItems(agents);
+        }
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : 'Unable to load registered agents.',
+          );
+          setItems([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadAgents();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [connected, ctx]);
+
+  if (!connected) {
+    return (
+      <section>
+        <h1>Agents</h1>
+        <p>Connect your Midnight wallet to view registered agents.</p>
+      </section>
+    );
+  }
+
+  return (
+    <section>
+      <h1>Agents</h1>
+
+      {loading && <p>Loading registered agents…</p>}
+
+      {error && (
+        <p role="alert">
+          Unable to load agents: {error}
+        </p>
+      )}
+
+      {!loading && !error && items.length === 0 && (
+        <p>No registered agents found on the configured contract.</p>
+      )}
+
+      {items.length > 0 && (
+        <div>
+          {items.map((agent) => (
+            <article key={agent.id}>
+              <h2>{agent.name}</h2>
+              <p>Role: {agent.role}</p>
+              <p>Reputation: {agent.reputation}</p>
+              <p>
+                Successful settlements:{' '}
+                {agent.successfulSettlements}
+              </p>
+              <p>
+                Unsuccessful settlements:{' '}
+                {agent.unsuccessfulSettlements}
+              </p>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
