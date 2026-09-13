@@ -18,7 +18,7 @@ import {
   Rocket,
 } from 'lucide-react';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useWallet } from '../contexts/WalletContext';
 
@@ -59,6 +59,21 @@ export function Layout() {
   } = useWallet();
 
   const loc = useLocation();
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
 
   const handleDeploy = async () => {
     if (!api) {
@@ -154,7 +169,7 @@ export function Layout() {
           </div>
         </div>
 
-        <nav>
+        <nav id="nexora-navigation">
           {nav.map(
             ([to, label, Icon]) => (
               <NavLink
@@ -197,6 +212,13 @@ export function Layout() {
             onClick={() =>
               setOpen(!open)
             }
+            aria-label={
+              open
+                ? 'Close navigation menu'
+                : 'Open navigation menu'
+            }
+            aria-expanded={open}
+            aria-controls="nexora-navigation"
           >
             {open ? (
               <X />
