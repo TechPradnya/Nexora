@@ -111,9 +111,6 @@ npm run test --prefix frontend
 
 A failing step blocks the badge above from turning green, so the badge is a live signal of build/test health, not just a decoration.
 
-## Product Proposal
-See [PROPOSAL.md](./PROPOSAL.md).
-
 ## Project Structure
 
 ```text
@@ -141,3 +138,6 @@ nexora/
 ├── LICENSE
 └── README.md
 ```
+
+## Product Proposal
+See [PROPOSAL.md](./PROPOSAL.md).
