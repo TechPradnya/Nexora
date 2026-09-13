@@ -69,9 +69,16 @@ npm run install:all
 # 2. Compile the Compact contract (generates contract/managed/nexora)
 npm run contract:compile
 
-# 3. Copy your environment file and fill in the values
+# 3. Configure environment variables
 cp .env.example .env
-# set VITE_CONTRACT_ADDRESS / CONTRACT_ADDRESS to your deployed Preprod address
+# Set the backend variables in .env as needed.
+
+# The frontend also requires these Vite variables in frontend/.env.local:
+# VITE_NETWORK_ID=preprod
+# VITE_CONTRACT_ADDRESS=<your deployed Preprod contract address>
+# VITE_NEXORA_LOCAL_SECRET_KEY=<your own 32-byte hexadecimal secret>
+# VITE_PRIVATE_STATE_PASSWORD=<your own private-state password>
+# VITE_PROOF_SERVER_URL=<your Midnight proof server URL>
 
 # 4. Run the backend + frontend together
 npm run dev
