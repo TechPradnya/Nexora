@@ -20,7 +20,7 @@ frontend/dist/
 backend/dist/
 
 # Midnight / Compact generated contract artifacts
-contract/managed/
+# contract/managed/
 
 # Midnight local data
 .midnight/
@@ -33,3 +33,5 @@ frontend/.vite/
 frontend/*.tsbuildinfo
 frontend/vite.config.js
 frontend/vite.config.d.ts
+.vercel
+.env*

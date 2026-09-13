@@ -1,0 +1,298 @@
+{
+  "manifest-version": "1",
+  "compiler-version": "0.34.0",
+  "language-version": "0.26.0",
+  "runtime-version": "0.19.0",
+  "compiler": {
+    "type": "directory",
+    "contract-info.json": {
+      "type": "file",
+      "size": 15925,
+      "hash": "80b5b5c2d083f2e682bd65c9cbc9f79f38a819ab05506a4e15dd19ac15701135"
+    }
+  },
+  "contract": {
+    "type": "directory",
+    "index.d.ts": {
+      "type": "file",
+      "size": 11192,
+      "hash": "fd88fb0e78bfa90d7c50c58252015aff16503183e137e348c30fd7ad168243a9"
+    },
+    "index.js": {
+      "type": "file",
+      "size": 230026,
+      "hash": "bdaf4075331a035bd1c73ff670adae1408c462321e89285c7e88d00ff2abe955"
+    },
+    "index.js.map": {
+      "type": "file",
+      "size": 9230,
+      "hash": "eb39c062bf4eee4eaa1140229bf8e6e92d461579a5592be94d1e79c382a9d251"
+    }
+  },
+  "zkir": {
+    "type": "directory",
+    "approveDeliverable.bzkir": {
+      "type": "file",
+      "size": 492,
+      "hash": "cd3ac98bbdffc17a25a99a1d98baf415dc1d3276b915f6dc41dd2f102301a8d0"
+    },
+    "approveDeliverable.zkir": {
+      "type": "file",
+      "size": 8885,
+      "hash": "b6616a76101ec2bb3477268ad8215c41c38f0318e1cc3a51134561cc3e50df5a"
+    },
+    "cancelEscrow.bzkir": {
+      "type": "file",
+      "size": 499,
+      "hash": "f9a05adca52cc05a6af0af86a94548de62445206feefd9f14b7e3c601d18297d"
+    },
+    "cancelEscrow.zkir": {
+      "type": "file",
+      "size": 8986,
+      "hash": "60f36fb3412f902026186d5baeda435020bfb0f2a988a88e27c9547846ea9e9a"
+    },
+    "createEscrow.bzkir": {
+      "type": "file",
+      "size": 978,
+      "hash": "9c9b457c2d9f90d10909c848836ed0b503a5e2fc4b6828468f65b6519ac38fe3"
+    },
+    "createEscrow.zkir": {
+      "type": "file",
+      "size": 16872,
+      "hash": "2098d26e4a2a231824a1d60aba7153ca763222483748a30fd6cc1247ee224420"
+    },
+    "createPolicy.bzkir": {
+      "type": "file",
+      "size": 309,
+      "hash": "df61135ce8a6347575ef48e94e71ea8eba4a07d90e943ce0d15b31db99e5d745"
+    },
+    "createPolicy.zkir": {
+      "type": "file",
+      "size": 5173,
+      "hash": "21dbdf74b1af4dbd995f869c670b7acd3644e2484b7e3a32dc53ca381d379995"
+    },
+    "fundEscrow.bzkir": {
+      "type": "file",
+      "size": 783,
+      "hash": "5109ae3348fce66f59c8a54c85285a30dd1511dac949163f84a7b4882fc435d3"
+    },
+    "fundEscrow.zkir": {
+      "type": "file",
+      "size": 12937,
+      "hash": "2a847aeb9d6776e2b8bfb49f741d9a9df35ec8ddef97f8609e27b2b840d41e98"
+    },
+    "getAgent.bzkir": {
+      "type": "file",
+      "size": 199,
+      "hash": "fc3d797d81dcfd8c2c2226944f2004f563fb9a24b0cbec27722513497b3f4dfb"
+    },
+    "getAgent.zkir": {
+      "type": "file",
+      "size": 3433,
+      "hash": "90df00000ab4875cce41ff15f82d5541e51bae9f059830309050b814cb09507d"
+    },
+    "getEscrow.bzkir": {
+      "type": "file",
+      "size": 245,
+      "hash": "f1426d3e4cf765dc4f89e203c35cdbe0f25050bc7c25fecfe37ce4fd276b4874"
+    },
+    "getEscrow.zkir": {
+      "type": "file",
+      "size": 4409,
+      "hash": "d2cb1c0f153f55f8f9710638750b26cc1ec72c73eb77b6d3dd630e886287e8b9"
+    },
+    "getPolicy.bzkir": {
+      "type": "file",
+      "size": 215,
+      "hash": "5f249fc3815cb04c5d377c93949f83e7291bcd749a0ad4f6e60d578a5a91ac4f"
+    },
+    "getPolicy.zkir": {
+      "type": "file",
+      "size": 3775,
+      "hash": "7dc8fd8f7f8c8c1a3a20eac64dc4cd40599d8fbe0bbe7f2076e29e733ac845c0"
+    },
+    "registerAgent.bzkir": {
+      "type": "file",
+      "size": 357,
+      "hash": "52002e31625ee1688c64cb3336f7191e57730b4bbe947791ab5e79ea5d819428"
+    },
+    "registerAgent.zkir": {
+      "type": "file",
+      "size": 5915,
+      "hash": "9b82c875ca3bd7d51721e3507be65fef1647b04c8be8eb87032e182000730c2d"
+    },
+    "rejectDeliverable.bzkir": {
+      "type": "file",
+      "size": 492,
+      "hash": "c1fa94a393c970956307b5dee9d4c39b1e3bdf3a8d5c3d95f5921336bdc457f1"
+    },
+    "rejectDeliverable.zkir": {
+      "type": "file",
+      "size": 8886,
+      "hash": "8bed5104c676521b4ff28eb56c9874b7baa7274e59df80082e9d1b2107822918"
+    },
+    "releaseEscrow.bzkir": {
+      "type": "file",
+      "size": 1222,
+      "hash": "32f7833403ac6f386817c144b2f909ac9c4ecd81f584f69544c0b8fd45c2ea7c"
+    },
+    "releaseEscrow.zkir": {
+      "type": "file",
+      "size": 20759,
+      "hash": "300cf9fe1f2d1b79270bba597fb90d2e4066fe1f783fd86deb427a271d805a7b"
+    },
+    "submitDeliverable.bzkir": {
+      "type": "file",
+      "size": 499,
+      "hash": "6e85169482842f25748dd2e441f262b52d84f8d80e6a3a0287b25078a689f67a"
+    },
+    "submitDeliverable.zkir": {
+      "type": "file",
+      "size": 8996,
+      "hash": "cfe98f5181f66e8f7cda7b90606f74c51dc9544d3da75d83815f25d2761f3097"
+    },
+    "updateReputation.bzkir": {
+      "type": "file",
+      "size": 1247,
+      "hash": "2d7db7f0b30e519613b5b4abad3055349e78e88ad08bef47928a796c01b5dd79"
+    },
+    "updateReputation.zkir": {
+      "type": "file",
+      "size": 18239,
+      "hash": "3ffa13b2f956dc6adf7537c0eeacfbda48bf525eebbadbf1e465922f47bb81ab"
+    }
+  },
+  "keys": {
+    "type": "directory",
+    "approveDeliverable.prover": {
+      "type": "file",
+      "size": 2820672,
+      "hash": "46339074a65e3a0a89feb087672dcc51f8f2a36f560897a09f2e4adcc6553e30"
+    },
+    "approveDeliverable.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "862f9daf13467d71ae112e06072ddadaef0b7f25ede6a76cb2c97f5b28c53cfa"
+    },
+    "cancelEscrow.prover": {
+      "type": "file",
+      "size": 2820721,
+      "hash": "3920d250a00c0521e9c9bb95e1914248c9b1c46d9421b6ad7dba1408fd4b14c1"
+    },
+    "cancelEscrow.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "4033f8bad11226f6ae88cdf4abc150e9c9067a158dbaba6e52f0b25170b65095"
+    },
+    "createEscrow.prover": {
+      "type": "file",
+      "size": 5213597,
+      "hash": "2f4d412f10a197126b9a2c7d077cb85d3987f6c938ff6a268fe0280da56f704c"
+    },
+    "createEscrow.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "51772912c446f2edb9de3f4312ebb65429f352ae51dc38e211f4cfbf6e75b58f"
+    },
+    "createPolicy.prover": {
+      "type": "file",
+      "size": 287736,
+      "hash": "82c35d662ab908f6facd50bb1d3270bc979f322011e1bd301ee231a0d7ee1b4a"
+    },
+    "createPolicy.verifier": {
+      "type": "file",
+      "size": 1351,
+      "hash": "191da26290454f7abe4553ac67ce428a6728d97fe9aa1cfce9b5e7712e202a37"
+    },
+    "fundEscrow.prover": {
+      "type": "file",
+      "size": 5201980,
+      "hash": "33f6eb84d4ebc5c67e4f68c4a6d6c2c441151878e77336f3e388ff50eebe75a0"
+    },
+    "fundEscrow.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "f12c1602f436ad5aef56555f10b1e42319bc197e685148bcbf435cc851d903a0"
+    },
+    "getAgent.prover": {
+      "type": "file",
+      "size": 147071,
+      "hash": "42d2bd29c41294268e824bf48977540483d75eeb10cc83480b7004d3992d1718"
+    },
+    "getAgent.verifier": {
+      "type": "file",
+      "size": 1351,
+      "hash": "7e1a708f6761b00a8b9b1fa5d73b1b9104f30503bcd1c4f53a5f5a5a9d6eba93"
+    },
+    "getEscrow.prover": {
+      "type": "file",
+      "size": 147197,
+      "hash": "077c6944cc46d8c4fd10141286f15a3d13cdbeb0c1449d488422a7c4d0089d8f"
+    },
+    "getEscrow.verifier": {
+      "type": "file",
+      "size": 1351,
+      "hash": "9be925ed448f0051ef3a6db23b786cae6694e39ae543ebbc54bcc7806693d59c"
+    },
+    "getPolicy.prover": {
+      "type": "file",
+      "size": 147134,
+      "hash": "857beb816ec8b7e281c8fc26388ae02d8fe3d262b087a9df98de24d56fef9dfd"
+    },
+    "getPolicy.verifier": {
+      "type": "file",
+      "size": 1351,
+      "hash": "96d0dfb4a72f413d646e1a9d8ff85be175b7f001fdbc063007b87cd3d063df47"
+    },
+    "registerAgent.prover": {
+      "type": "file",
+      "size": 2820931,
+      "hash": "8636cc2d6f3070e43695f0b38ce7e9344ddc8431f12cec4b7d8243e84a82c396"
+    },
+    "registerAgent.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "ae9949e21d8200145ddaf323b501533f67189d541d4b0bfd2f351d2ebaf8a51f"
+    },
+    "rejectDeliverable.prover": {
+      "type": "file",
+      "size": 2820686,
+      "hash": "9752555156aadf1cf69a10dde1da82c63d0956169b8fb47e76b7f8435d877328"
+    },
+    "rejectDeliverable.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "ece38a2abe8339634607076381c683d2100eb109f6df91f696f140cc77dc6a01"
+    },
+    "releaseEscrow.prover": {
+      "type": "file",
+      "size": 5204127,
+      "hash": "e277077039ddee57106c03804ff684ccd7853d9b265f2031eb8f33bf9ea28c50"
+    },
+    "releaseEscrow.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "0d3a6be2e3b51ba1aa6a60a3af4b21dd8d50fbba90642fff14d438e341d0d9ca"
+    },
+    "submitDeliverable.prover": {
+      "type": "file",
+      "size": 2820914,
+      "hash": "984328b3223007d27375af46724affbadac3532ac444dfa335f2f6cb653d461f"
+    },
+    "submitDeliverable.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "2dc0645d978dd576e654d204608c89bebae1e95382e33d961f8e49f710824e19"
+    },
+    "updateReputation.prover": {
+      "type": "file",
+      "size": 2821839,
+      "hash": "cf16514a2ea34f9f5d6c401dfa682790e6be94931ac7f83d9b049eb890bcd6b7"
+    },
+    "updateReputation.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "3e105d515ea7291e3be2fad23a5e35d978a2b9c223660a1b01b67b71749c88ff"
+    }
+  }
+}
