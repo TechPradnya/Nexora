@@ -10,12 +10,16 @@ function roleName(role: bigint): Role {
   switch (Number(role)) {
     case 1:
       return 'Client';
+
     case 2:
       return 'Contractor';
+
     case 3:
       return 'Verifier';
+
     case 4:
       return 'Orchestrator';
+
     default:
       return 'Client';
   }
@@ -68,12 +72,15 @@ export function Agents() {
         }
 
         const state = ledger(contractState.data);
+
         const agents: OnChainAgent[] = [];
 
         for (const [id, value] of state.agents) {
+          const fullId = bytesToHex(id);
+
           agents.push({
-            id: bytesToHex(id),
-            name: `Agent ${bytesToHex(id).slice(0, 8)}`,
+            id: fullId,
+            name: `Agent ${fullId.slice(0, 8)}`,
             role: roleName(value.role),
             reputation: Number(value.reputation),
             successfulSettlements: Number(value.successful),
@@ -92,6 +99,7 @@ export function Agents() {
               ? err.message
               : 'Unable to load registered agents.',
           );
+
           setItems([]);
         }
       } finally {
@@ -112,7 +120,10 @@ export function Agents() {
     return (
       <section>
         <h1>Agents</h1>
-        <p>Connect your Midnight wallet to view registered agents.</p>
+
+        <p>
+          Connect your Midnight wallet to view registered agents.
+        </p>
       </section>
     );
   }
@@ -121,7 +132,9 @@ export function Agents() {
     <section>
       <h1>Agents</h1>
 
-      {loading && <p>Loading registered agents…</p>}
+      {loading && (
+        <p>Loading registered agents…</p>
+      )}
 
       {error && (
         <p role="alert">
@@ -129,23 +142,41 @@ export function Agents() {
         </p>
       )}
 
-      {!loading && !error && items.length === 0 && (
-        <p>No registered agents found on the configured contract.</p>
-      )}
+      {!loading &&
+        !error &&
+        items.length === 0 && (
+          <p>
+            No registered agents found on the configured contract.
+          </p>
+        )}
 
       {items.length > 0 && (
         <div>
           {items.map((agent) => (
             <article key={agent.id}>
               <h2>{agent.name}</h2>
-              <p>Role: {agent.role}</p>
-              <p>Reputation: {agent.reputation}</p>
+
+              {/* Full on-chain agent identifier */}
+              <p className="mono">
+                <strong>ID:</strong> {agent.id}
+              </p>
+
               <p>
-                Successful settlements:{' '}
+                <strong>Role:</strong> {agent.role}
+              </p>
+
+              <p>
+                <strong>Reputation:</strong>{' '}
+                {agent.reputation}
+              </p>
+
+              <p>
+                <strong>Successful settlements:</strong>{' '}
                 {agent.successfulSettlements}
               </p>
+
               <p>
-                Unsuccessful settlements:{' '}
+                <strong>Unsuccessful settlements:</strong>{' '}
                 {agent.unsuccessfulSettlements}
               </p>
             </article>
