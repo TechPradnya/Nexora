@@ -2,40 +2,206 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
-import { api } from '../lib/api';
 import { useWallet } from '../contexts/WalletContext';
-import type { Escrow } from '../types/domain';
 import { StatusBadge } from '../components/StatusBadge';
 import { sha256Hex } from '../lib/commitment';
+import { ledger } from '../generated/nexora/contract/index.js';
+
+type OnChainEscrow = {
+  id: string;
+  client: string;
+  contractor: string;
+  verifier: string;
+  policyId: string;
+  amount: string;
+  status: string;
+  commitment?: string;
+  approved: boolean;
+};
+
+function bytesToHex(value: unknown): string {
+  if (value instanceof Uint8Array) {
+    return Array.from(value)
+      .map(byte => byte.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  if (value instanceof ArrayBuffer) {
+    return bytesToHex(new Uint8Array(value));
+  }
+
+  if (
+    value &&
+    typeof value === 'object' &&
+    'buffer' in value
+  ) {
+    const buffer = (value as { buffer?: ArrayBuffer }).buffer;
+
+    if (buffer instanceof ArrayBuffer) {
+      return bytesToHex(new Uint8Array(buffer));
+    }
+  }
+
+  return String(value);
+}
+
+function statusName(status: number): string {
+  switch (status) {
+    case 1:
+      return 'Created';
+
+    case 2:
+      return 'Funded';
+
+    case 3:
+      return 'DeliverableSubmitted';
+
+    case 4:
+      return 'Approved';
+
+    case 5:
+      return 'Rejected';
+
+    case 6:
+      return 'Released';
+
+    case 7:
+      return 'Cancelled';
+
+    default:
+      return `Unknown (${status})`;
+  }
+}
 
 export function EscrowDetails() {
   const { id } = useParams<{ id: string }>();
-  const { ctx, connected, api: walletApi } = useWallet();
 
-  const [escrow, setEscrow] = useState<Escrow>();
-  const [message, setMessage] = useState('');
-  const [busy, setBusy] = useState(false);
+  const {
+    ctx,
+    connected,
+    api: walletApi,
+  } = useWallet();
+
+  const [escrow, setEscrow] =
+    useState<OnChainEscrow>();
+
+  const [message, setMessage] =
+    useState('');
+
+  const [busy, setBusy] =
+    useState(false);
 
   async function load() {
     try {
-      const result = await api.escrows();
+      setMessage('');
 
-      const found = result.items.find(
-        item => item.id === id,
-      );
+      if (!ctx) {
+        setEscrow(undefined);
+        return;
+      }
+
+      const contractAddress =
+        import.meta.env.VITE_CONTRACT_ADDRESS;
+
+      if (!contractAddress) {
+        throw new Error(
+          'VITE_CONTRACT_ADDRESS is not configured.',
+        );
+      }
+
+      const contractState =
+        await ctx.providers.publicDataProvider.queryContractState(
+          contractAddress,
+        );
+
+      if (!contractState) {
+        setEscrow(undefined);
+        return;
+      }
+
+      const state =
+        ledger(contractState.data);
+
+      let found:
+        | OnChainEscrow
+        | undefined;
+
+      for (const [escrowId, item] of state.escrows) {
+        const currentId =
+          bytesToHex(escrowId);
+
+        if (
+          currentId.toLowerCase() !==
+          String(id ?? '').toLowerCase()
+        ) {
+          continue;
+        }
+
+        found = {
+          id: currentId,
+
+          client: bytesToHex(
+            item.client,
+          ),
+
+          contractor: bytesToHex(
+            item.contractor,
+          ),
+
+          verifier: bytesToHex(
+            item.verifier,
+          ),
+
+          policyId: bytesToHex(
+            item.policyId,
+          ),
+
+          amount: item.amount.toString(),
+
+          status: statusName(
+            Number(item.status),
+          ),
+
+          commitment:
+            bytesToHex(
+              item.deliverableCommitment,
+            ),
+
+          approved:
+            Boolean(item.approved),
+        };
+
+        break;
+      }
 
       setEscrow(found);
-    } catch {
+    } catch (error: any) {
+      console.error(
+        'Failed to load escrow:',
+        error,
+      );
+
       setEscrow(undefined);
+
+      setMessage(
+        error?.message ??
+          'Failed to load escrow from Midnight.',
+      );
     }
   }
 
   useEffect(() => {
-    load();
-  }, [id]);
+    if (connected && ctx) {
+      load();
+    }
+  }, [id, connected, ctx]);
 
   async function requireWallet() {
-    if (!connected || !ctx || !walletApi) {
+    if (
+      !connected ||
+      !ctx ||
+      !walletApi
+    ) {
       throw new Error(
         'Connect the Midnight wallet and configure the deployed contract first.',
       );
@@ -54,7 +220,8 @@ export function EscrowDetails() {
     setMessage('');
 
     try {
-      const { ctx } = await requireWallet();
+      const { ctx } =
+        await requireWallet();
 
       await ctx.contract.callTx.fundEscrow(
         escrow.id,
@@ -68,7 +235,8 @@ export function EscrowDetails() {
       await load();
     } catch (error: any) {
       setMessage(
-        error?.message ?? 'Funding transaction failed.',
+        error?.message ??
+          'Funding transaction failed.',
       );
     } finally {
       setBusy(false);
@@ -82,11 +250,13 @@ export function EscrowDetails() {
     setMessage('');
 
     try {
-      const { ctx } = await requireWallet();
+      const { ctx } =
+        await requireWallet();
 
-      const commitment = await sha256Hex(
-        `nexora:deliverable:${escrow.id}:${Date.now()}`,
-      );
+      const commitment =
+        await sha256Hex(
+          `nexora:deliverable:${escrow.id}:${Date.now()}`,
+        );
 
       await ctx.contract.callTx.submitDeliverable(
         escrow.id,
@@ -115,7 +285,8 @@ export function EscrowDetails() {
     setMessage('');
 
     try {
-      const { ctx } = await requireWallet();
+      const { ctx } =
+        await requireWallet();
 
       await ctx.contract.callTx.approveDeliverable(
         escrow.id,
@@ -143,7 +314,8 @@ export function EscrowDetails() {
     setMessage('');
 
     try {
-      const { ctx } = await requireWallet();
+      const { ctx } =
+        await requireWallet();
 
       await ctx.contract.callTx.rejectDeliverable(
         escrow.id,
@@ -171,8 +343,10 @@ export function EscrowDetails() {
     setMessage('');
 
     try {
-      const { ctx, walletApi } =
-        await requireWallet();
+      const {
+        ctx,
+        walletApi,
+      } = await requireWallet();
 
       const {
         unshieldedAddress,
@@ -220,7 +394,8 @@ export function EscrowDetails() {
     setMessage('');
 
     try {
-      const { ctx } = await requireWallet();
+      const { ctx } =
+        await requireWallet();
 
       await ctx.contract.callTx.cancelEscrow(
         escrow.id,
@@ -241,15 +416,50 @@ export function EscrowDetails() {
     }
   }
 
+  if (!connected) {
+    return (
+      <div className="form-page">
+        <div className="panel">
+          <h2>
+            Connect Midnight wallet
+          </h2>
+
+          <p>
+            Connect your Midnight wallet to
+            view the on-chain escrow details.
+          </p>
+
+          <Link
+            className="button ghost"
+            to="/escrows"
+          >
+            <ArrowLeft size={16} />
+            Back to escrows
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (!escrow) {
     return (
       <div className="form-page">
         <div className="panel">
-          <h2>Escrow not found</h2>
+          <h2>
+            Escrow not found
+          </h2>
+
           <p>
-            The escrow is not available from the indexed
-            backend data.
+            The escrow could not be found in
+            the configured Midnight contract.
           </p>
+
+          {message && (
+            <div className="alert">
+              {message}
+            </div>
+          )}
+
           <Link
             className="button ghost"
             to="/escrows"
@@ -283,15 +493,17 @@ export function EscrowDetails() {
           </h2>
 
           <p>
-            Contract-enforced escrow lifecycle for
-            this settlement.
+            Contract-enforced escrow lifecycle
+            for this settlement.
           </p>
         </div>
       </div>
 
       <div className="panel">
         <div className="policy-top">
-          <StatusBadge status={escrow.status} />
+          <StatusBadge
+            status={escrow.status}
+          />
 
           <span className="mono">
             {escrow.id}
@@ -301,12 +513,16 @@ export function EscrowDetails() {
         <div className="review-meta">
           <span>
             Amount
-            <b>{escrow.amount} NXR</b>
+            <b>
+              {escrow.amount} NXR
+            </b>
           </span>
 
           <span>
             Policy
-            <b>{escrow.policyId}</b>
+            <b>
+              {escrow.policyId}
+            </b>
           </span>
         </div>
 
@@ -333,17 +549,19 @@ export function EscrowDetails() {
           </span>
         </div>
 
-        {escrow.commitment && (
-          <div>
-            <h3>
-              Deliverable commitment
-            </h3>
+        {escrow.commitment &&
+          escrow.commitment !==
+            'undefined' && (
+            <div>
+              <h3>
+                Deliverable commitment
+              </h3>
 
-            <div className="commitment">
-              {escrow.commitment}
+              <div className="commitment">
+                {escrow.commitment}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {message && (
           <div className="alert">
@@ -352,7 +570,8 @@ export function EscrowDetails() {
         )}
 
         <div className="review-actions">
-          {escrow.status === 'Created' && (
+          {escrow.status ===
+            'Created' && (
             <>
               <button
                 className="button primary"
@@ -374,11 +593,14 @@ export function EscrowDetails() {
             </>
           )}
 
-          {escrow.status === 'Funded' && (
+          {escrow.status ===
+            'Funded' && (
             <button
               className="button primary"
               disabled={busy}
-              onClick={submitDeliverable}
+              onClick={
+                submitDeliverable
+              }
             >
               {busy
                 ? 'Submitting…'
@@ -407,7 +629,8 @@ export function EscrowDetails() {
             </>
           )}
 
-          {escrow.status === 'Approved' && (
+          {escrow.status ===
+            'Approved' && (
             <button
               className="button primary"
               disabled={busy}
@@ -419,7 +642,8 @@ export function EscrowDetails() {
             </button>
           )}
 
-          {escrow.status === 'Rejected' && (
+          {escrow.status ===
+            'Rejected' && (
             <button
               className="button danger"
               disabled={busy}

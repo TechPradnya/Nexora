@@ -9,6 +9,7 @@ export function NewEscrow() {
   const { ctx, connected } = useWallet();
 
   const [f, setF] = useState({
+    client: '',
     contractor: '',
     verifier: '',
     policy: '',
@@ -27,13 +28,14 @@ export function NewEscrow() {
     }
 
     if (
+      !f.client.trim() ||
       !f.contractor.trim() ||
       !f.verifier.trim() ||
       !f.policy.trim() ||
       Number(f.amount) <= 0
     ) {
       setMsg(
-        'Contractor, verifier, policy and a positive amount are required.',
+        'Client, contractor, verifier, policy and a positive amount are required.',
       );
       return;
     }
@@ -50,8 +52,10 @@ export function NewEscrow() {
         `nexora:escrow:${ctx.address}:${f.contractor}:${Date.now()}`,
       );
 
-      const clientId = await sha256Bytes(
-        `nexora:client:${ctx.address}`,
+      // Use the registered Client agent ID.
+      // Do not derive it from the wallet address.
+      const clientId = hexToBytes(
+        f.client.trim().replace(/^0x/, ''),
       );
 
       const contractorId = hexToBytes(
@@ -65,6 +69,12 @@ export function NewEscrow() {
       const policyId = hexToBytes(
         f.policy.trim().replace(/^0x/, ''),
       );
+
+      if (clientId.length !== 32) {
+        throw new Error(
+          'Client identifier must be exactly 32 bytes (64 hexadecimal characters).',
+        );
+      }
 
       if (contractorId.length !== 32) {
         throw new Error(
@@ -141,6 +151,22 @@ export function NewEscrow() {
         className="panel form"
         onSubmit={submit}
       >
+        <label>
+          Client identifier
+
+          <input
+            required
+            value={f.client}
+            onChange={(e) =>
+              setF({
+                ...f,
+                client: e.target.value,
+              })
+            }
+            placeholder="64-character hexadecimal client ID"
+          />
+        </label>
+
         <label>
           Contractor identifier
 

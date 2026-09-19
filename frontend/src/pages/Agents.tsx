@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { useWallet } from '../contexts/WalletContext';
 import { ledger } from '../generated/nexora/contract';
@@ -32,6 +33,7 @@ function bytesToHex(bytes: Uint8Array): string {
 }
 
 export function Agents() {
+  const navigate = useNavigate();
   const { ctx, connected } = useWallet();
 
   const [items, setItems] = useState<OnChainAgent[]>([]);
@@ -119,18 +121,40 @@ export function Agents() {
   if (!connected) {
     return (
       <section>
-        <h1>Agents</h1>
+        <div className="page-header">
+          <div>
+            <h1>Agents</h1>
+            <p>
+              Connect your Midnight wallet to view registered agents.
+            </p>
+          </div>
 
-        <p>
-          Connect your Midnight wallet to view registered agents.
-        </p>
+          <button
+            className="button primary"
+            onClick={() => navigate('/agents/register')}
+          >
+            Register Agent
+          </button>
+        </div>
       </section>
     );
   }
 
   return (
     <section>
-      <h1>Agents</h1>
+      <div className="page-header">
+        <div>
+          <h1>Agents</h1>
+          <p>Manage registered Nexora agents.</p>
+        </div>
+
+        <button
+          className="button primary"
+          onClick={() => navigate('/agents/register')}
+        >
+          Register Agent
+        </button>
+      </div>
 
       {loading && (
         <p>Loading registered agents…</p>
