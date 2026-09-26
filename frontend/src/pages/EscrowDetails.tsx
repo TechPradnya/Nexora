@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 
 import { useWallet } from '../contexts/WalletContext';
 import { StatusBadge } from '../components/StatusBadge';
-import { sha256Hex } from '../lib/commitment';
+import { hexToBytes, sha256Hex } from '../lib/commitment';
 import { ledger } from '../generated/nexora/contract/index.js';
 
 type OnChainEscrow = {
@@ -22,7 +22,7 @@ type OnChainEscrow = {
 function bytesToHex(value: unknown): string {
   if (value instanceof Uint8Array) {
     return Array.from(value)
-      .map(byte => byte.toString(16).padStart(2, '0'))
+      .map((byte) => byte.toString(16).padStart(2, '0'))
       .join('');
   }
 
@@ -224,7 +224,7 @@ export function EscrowDetails() {
         await requireWallet();
 
       await ctx.contract.callTx.fundEscrow(
-        escrow.id,
+        hexToBytes(escrow.id),
         BigInt(escrow.amount),
       );
 
@@ -259,8 +259,8 @@ export function EscrowDetails() {
         );
 
       await ctx.contract.callTx.submitDeliverable(
-        escrow.id,
-        commitment,
+        hexToBytes(escrow.id),
+        hexToBytes(commitment),
       );
 
       setMessage(
@@ -289,7 +289,7 @@ export function EscrowDetails() {
         await requireWallet();
 
       await ctx.contract.callTx.approveDeliverable(
-        escrow.id,
+        hexToBytes(escrow.id),
       );
 
       setMessage(
@@ -318,7 +318,7 @@ export function EscrowDetails() {
         await requireWallet();
 
       await ctx.contract.callTx.rejectDeliverable(
-        escrow.id,
+        hexToBytes(escrow.id),
       );
 
       setMessage(
@@ -366,7 +366,7 @@ export function EscrowDetails() {
         );
 
       await ctx.contract.callTx.releaseEscrow(
-        escrow.id,
+        hexToBytes(escrow.id),
         {
           bytes: addressBytes,
         },
@@ -398,7 +398,7 @@ export function EscrowDetails() {
         await requireWallet();
 
       await ctx.contract.callTx.cancelEscrow(
-        escrow.id,
+        hexToBytes(escrow.id),
       );
 
       setMessage(
