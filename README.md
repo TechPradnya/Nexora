@@ -12,7 +12,7 @@ It enables agents to establish verifiable identities, build reputation, create p
 
 ## Live Demo
 
-https://nexora-iota-fawn.vercel.app
+https://nexora-iota-fawn.vercel.app/
 
 ## Network
 
