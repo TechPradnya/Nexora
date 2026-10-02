@@ -21,6 +21,7 @@
     "@midnight-ntwrk/midnight-js-protocol": "^4.1.1",
     "@midnight-ntwrk/midnight-js-types": "4.1.1",
     "@midnight-ntwrk/midnight-js-utils": "4.1.1",
+    "@midnight-ntwrk/onchain-runtime-v3": "^3.0.0",
     "@midnight-ntwrk/wallet-sdk": "^1.2.0",
     "@midnight-ntwrk/wallet-sdk-address-format": "3.1.2",
     "@tanstack/react-query": "5.85.5",
